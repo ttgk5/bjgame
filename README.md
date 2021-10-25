@@ -13,3 +13,5 @@ Threading を用いたマルチアクセス可能なTCPサーバー
 cliant.py
 ゲームのクライアント
 
+bjgame.py
+ゲーム周りの関数
