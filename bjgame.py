@@ -5,7 +5,6 @@ author : t.katoh
 
 import random
 
-<<<<<<< HEAD
 suit = ["SPADE", "HEART", "DIAMD", "CLOVE"]
 number = ['a', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 
@@ -39,16 +38,10 @@ def CardDealer(deck, inputcards = None, Appendmode = None):
     cards = []
     
     #inputcardsがあったら引数をcardsに保存する
-=======
-
-def CardDealer(inputcards = None, Appendmode = None):
-    cards = []
->>>>>>> da69c5c1484bd59f92a8e25e967cbf68763b4951
     if inputcards != None:
         cards = inputcards
     
     if Appendmode == None:
-<<<<<<< HEAD
         for k in range(2):
             cards.append(deck.pop())
     else:
@@ -123,14 +116,6 @@ def SplitCard(cards): #引数はTrumpCard class 返り値はlist
     
     
                 
-=======
-        cards.append(random.randint(1, 11))
-        cards.append(random.randint(1, 11))
-    else:
-        cards.append(random.randint(1, 11))
-    return cards
-
->>>>>>> da69c5c1484bd59f92a8e25e967cbf68763b4951
 def dealerCPU(cards, P1, P2):
     while 1:
         if sum(cards) < 17:
@@ -190,7 +175,6 @@ def WinJudge(P1_cards, P2_cards, D_cards = [2,7]):
                 WinnerFlg = 2
 
     return WinnerFlg
-<<<<<<< HEAD
 def main():
     global deck
     MakeDeck(deck)
@@ -201,21 +185,11 @@ def main():
     P2d = [10,10]
     KeepCard = 0
     
-=======
-
-def main():
-    P1 = CardDealer()
-    P2 = CardDealer()
-    P1d = [10,10]
-    P2d = [10,10]
-    KeepCard = 0
->>>>>>> da69c5c1484bd59f92a8e25e967cbf68763b4951
 
     
     #card change division
 
     while 1:
-<<<<<<< HEAD
         print("P1 Do you need card(s)? Need = 1,  No card change = 0")
         print(ShowCards(P1))
         P1changeflg = input()
@@ -225,19 +199,6 @@ def main():
             P1 = CardDealer(deck, P1, 1)
             break
         elif(P1changeflg == "2"):
-=======
-        print("P1 Do you wanna change card(s)? 1card change = 1, 2cards change = 2, No card change = 0")
-        print(P1)
-        P1changeflg = input()
-
-        if(P1changeflg == "1"):
-            print("Please select keep card")
-            KeepCard = input()
-            P1 = CardDealer(KeepCard)
-            break
-        elif(P1changeflg == "2"):
-            P1 = CardDealer()
->>>>>>> da69c5c1484bd59f92a8e25e967cbf68763b4951
             break
         elif(P1changeflg == "0"):
             pass
@@ -245,16 +206,10 @@ def main():
         else:
             print("invaid value")
 
-<<<<<<< HEAD
     print(ShowCards(P1))
     print(ShowCards(P2))
     print(ShowCards(PD))
     a = WinJudge(P1, P2, PD)
-=======
-    print(P1)
-    print(P2)
-    a = WinJudge(P1, P2)
->>>>>>> da69c5c1484bd59f92a8e25e967cbf68763b4951
     #a = WinJudge(P1d, P2d)
 
     if(a == 1):
