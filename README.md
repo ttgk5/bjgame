@@ -5,7 +5,7 @@ n人対戦ブラックジャックを作る予定
 # enviroment
 Python 3
 
-# about cords
+# about codes
 
 server.py
 Threading を用いたマルチアクセス可能なTCPサーバー
