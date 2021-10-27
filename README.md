@@ -7,11 +7,11 @@ Python 3
 
 # about codes
 
-server.py
+bj_server.py
 Threading を用いたマルチアクセス可能なTCPサーバー
 
 
-cliant.py
+bj_client.py
 ゲームのクライアント
 
 bjgame.py
