@@ -58,8 +58,9 @@ while (True):
         P1CardData = [CardData[2], CardData[3]]
         P2CardData = [CardData[4], CardData[5]]
 
-        print("Dealer's Card")        
-        print(bjgame.ShowCards(DCardData))
+        print("Dealer's Card")
+        dbuf = bjgame.ShowCards(DCardData)
+        print(dbuf[0])
         print("Cards Dealt")
         if P1flg == 1:
             print(bjgame.ShowCards(P1CardData))
