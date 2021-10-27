@@ -26,17 +26,73 @@ sock.bind(argument)
 # 5 ユーザまで接続を許可
 sock.listen(MAX_PLAYER)
 clients = []
+
 #ゲーム関連変数
 ConFlg = 0
 doneflg = []
 P1Burstflg = 0
 P2Burstflg = 0
-P1CardData = bjgame.CardDealer()
-P2CardData = bjgame.CardDealer()
-DCardData  = bjgame.CardDealer()
+deck = bjgame.MakeDeck()
+P1CardData = bjgame.CardDealer(deck)
+P2CardData = bjgame.CardDealer(deck)
+DCardData  = bjgame.CardDealer(deck)
+
+clientscard = [DCardData]
 
 # 接続済みクライアントは読み込みおよび書き込みを繰り返す
+
+def Win_Procedure(connection):
+    global deck
+    global DCardData
+    global P1CardData
+    global P2CardData
+
+    while 1:
+        if(len(doneflg) == MAX_PLAYER):
+            connection.send("DONE!".encode("utf-8"))
+            break
+        else:
+            connection.send("WAITN".encode("utf-8"))
+            sleep(2)
+
+    if (P1Burstflg and P2Burstflg):
+        print("dealer win")
+        sleep(0.5)
+        connection.send("SHOWD".encode("utf-8"))
+
+    else:
+        sleep(0.5)
+        connection.send("GOWIN".encode("utf-8"))
+        d = bjgame.dealerCPU(deck, DCardData, P2CardData, P1CardData)
+        sleep(0.1)
+        connection.send(pickle.dumps(d))
+        sleep(0.1)
+        winner = bjgame.WinJudge(P1CardData, P2CardData, d)
+
+
+        if(winner == 1):
+            connection.send("P1W".encode("utf-8"))
+            print("P1 win")
+        elif(winner == 0):
+            connection.send("P2W".encode("utf-8"))
+            print("P2 win")
+        elif(winner == 2):
+            connection.send("DLW".encode("utf-8"))
+            print("dealer win")
+        elif(winner == 3):
+            connection.send("P12".encode("utf-8"))
+            print("p1 p2 win (dealer lost) ")
+        else:
+            connection.send("DRW".encode("utf-8"))
+            print("draw")
+
+    
+
+    while 1:
+        pass
+
 def Player_one(connection, address):
+    global deck
     global doneflg
     global P1CardData
     global P2CardData
@@ -63,7 +119,10 @@ def Player_one(connection, address):
               
         
         #ディーラーのカードとプレイヤーのカードデータ
-        DealCard = P1CardData + DCardData
+        DealCard = []
+        for i in clientscard:
+            DealCard.extend(i)
+
         connection.send(pickle.dumps(DealCard))
 
         while 1:
@@ -71,7 +130,7 @@ def Player_one(connection, address):
             ChangeData = pickle.loads(msg)
 
             if ChangeData[0] == "1":    #1枚追加
-                P1CardData = bjgame.CardDealer(P1CardData, 1)
+                P1CardData = bjgame.CardDealer(deck, P1CardData, 1)
                 sleep(0.2)
                 connection.send(pickle.dumps(P1CardData))
 
@@ -88,49 +147,8 @@ def Player_one(connection, address):
         
         doneflg.append(1)
         print("1 Waiting for others...")
-        while 1:
-            if(len(doneflg) == MAX_PLAYER):
-                connection.send("DONE!".encode("utf-8"))
-                break
-            else:
-                connection.send("WAITN".encode("utf-8"))
-                sleep(2)
 
-        if (P1Burstflg and P2Burstflg):
-            print("dealer win")
-            sleep(0.5)
-            connection.send("SHOWD".encode("utf-8"))
-
-        else:
-            sleep(0.5)
-            connection.send("GOWIN".encode("utf-8"))
-            d = bjgame.dealerCPU(DCardData, P2CardData, P1CardData)
-            sleep(0.1)
-            connection.send(pickle.dumps(d))
-            sleep(0.1)
-            winner = bjgame.WinJudge(P1CardData, P2CardData, d)
-
-
-            if(winner == 1):
-                connection.send("P1W".encode("utf-8"))
-                print("P1 win")
-            elif(winner == 0):
-                connection.send("P2W".encode("utf-8"))
-                print("P2 win")
-            elif(winner == 2):
-                connection.send("DLW".encode("utf-8"))
-                print("dealer win")
-            elif(winner == 3):
-                connection.send("P12".encode("utf-8"))
-                print("p1 p2 win (dealer lost) ")
-            else:
-                connection.send("DRW".encode("utf-8"))
-                print("draw")
-
-        
-
-        while 1:
-            pass
+        Win_Procedure(connection)
 
     except Exception as e:
         print(e)
@@ -158,7 +176,10 @@ def Player_two(connection, address):
 
 
         #ディーラーのカードとプレイヤーのカードデータ
-        DealCard = P2CardData + DCardData
+        DealCard = []
+        for i in clientscard:
+            DealCard.extend(i)
+
         connection.send(pickle.dumps(DealCard))
 
         while 1:
@@ -166,15 +187,15 @@ def Player_two(connection, address):
             ChangeData = pickle.loads(msg)
 
             if ChangeData[0] == "1":    #1枚追加
-                P2CardData = bjgame.CardDealer(P2CardData, 1)
+                P2CardData = bjgame.CardDealer(deck, P2CardData, 1)
                 sleep(0.2)
                 connection.send(pickle.dumps(P2CardData))
-
 
             elif ChangeData[0] == "2":  #交換なし
                 print("no card add")
                 break
-            elif ChangeData[0] == "3":  #バースト処理
+
+            elif ChangeData[0] == "3":
                 print("P2 burst")
                 P2Burstflg = 1
                 break
@@ -183,48 +204,8 @@ def Player_two(connection, address):
         
         doneflg.append(1)
         print("2 Waiting for others...")
-            
-        while 1:
-            if(len(doneflg) == MAX_PLAYER):
-                connection.send("DONE!".encode("utf-8"))
-                break
-            else:
-                connection.send("WAITN".encode("utf-8"))
-                sleep(2)
-        
-        if (P1Burstflg and P2Burstflg):
-            print("dealer win")
-            sleep(0.5)
-            connection.send("SHOWD".encode("utf-8"))
-
-        else:
-            sleep(0.5)
-            connection.send("GOWIN".encode("utf-8"))
-            d = bjgame.dealerCPU(DCardData, P2CardData, P1CardData)
-            sleep(0.1)
-            connection.send(pickle.dumps(d))
-            sleep(0.1)
-            winner = bjgame.WinJudge(P1CardData, P2CardData, d)
-            if(winner == 1):
-                connection.send("P1W".encode("utf-8"))
-                print("P1 win")
-            elif(winner == 0):
-                connection.send("P2W".encode("utf-8"))
-                print("P2 win")
-            elif(winner == 2):
-                connection.send("DLW".encode("utf-8"))
-                print("dealer win")
-            elif(winner == 3):
-                connection.send("P12".encode("utf-8"))
-                print("p1 p2 win (dealer lost) ")
-            else:
-                connection.send("DRW".encode("utf-8"))
-                print("draw")
-
-
-        while 1:
-            pass
-        
+        Win_Procedure(connection)
+    
 
 
     except Exception as e:
@@ -254,6 +235,7 @@ def main():
         clients.append((conn, addr))
         if(len(clients) == 2):
             ConFlg = 1
+            clientscard.extend([P1CardData, P2CardData])
 
         # スレッド作成
         if(len(clients) == 2):

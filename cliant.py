@@ -10,9 +10,10 @@ import socket
 import pickle
 from time import sleep
 
-from bjgame import CardDealer
+import bjgame
 
-
+P1flg = 0
+P2flg = 0
 
 try:
 
@@ -37,8 +38,10 @@ while (True):
                 print("Welcome BLACKJACK game! please wait...")
             elif res == b'PLAY1':
                 print("You are player 1")
+                P1flg = 1
             elif res == b'PLAY2':
                 print("You are player 2")
+                P2flg = 1
             elif res == b'MATCH':
                 print("Matching complate!")
             elif res == b'NEXTT':
@@ -48,18 +51,25 @@ while (True):
 
         
 
-        msg = s.recv(128)
+        msg = s.recv(256)
 
         CardData = pickle.loads(msg)
-        DCardData = [CardData[2], CardData[3]]
-        PCardData = [CardData[0], CardData[1]]
-        print("Dealer's Card")
-        print(DCardData[0])
+        DCardData = [CardData[0], CardData[1]]
+        P1CardData = [CardData[2], CardData[3]]
+        P2CardData = [CardData[4], CardData[5]]
+
+        print("Dealer's Card")        
+        print(bjgame.ShowCards(DCardData))
         print("Cards Dealt")
-        print(PCardData)
+        if P1flg == 1:
+            print(bjgame.ShowCards(P1CardData))
+            PCardData = P1CardData
+        elif P2flg == 1:
+            print(bjgame.ShowCards(P2CardData))
+            PCardData = P2CardData
 
         while 1:
-                if(sum(PCardData) > 21):
+                if(bjgame.CardSum_Class(PCardData) > 21):
                     print("You are busted!")
                     changeflg = "3"
                     ChangeData = [changeflg, None]
@@ -67,14 +77,14 @@ while (True):
                     break
                 
                 print("Do you wanna add card? Yes = 1 No = 2")
-                print(PCardData)
+                print(bjgame.ShowCards(PCardData))
                 changeflg = input()
 
                 if(changeflg == "1"):       #カード追加
 
                     ChangeData = [changeflg, 0]
                     s.send(pickle.dumps(ChangeData))
-                    msg = s.recv(128)
+                    msg = s.recv(256)
                     PCardData = pickle.loads(msg)
 
                 elif(changeflg == "2"):
@@ -86,7 +96,7 @@ while (True):
                     print("invaid value")
                 
         print("Your Cards")
-        print(PCardData)
+        print(bjgame.ShowCards(PCardData))
 
         waitcnt = 0
 
@@ -109,9 +119,10 @@ while (True):
                 print("Dealer win!")
                 print(DCardData)
             elif res == b'GOWIN':
-                DCardData = s.recv(128)
+                DCardData = s.recv(256)
                 print("Dealer's cards")
-                print(pickle.loads(DCardData))
+                
+                print(bjgame.ShowCards(pickle.loads(DCardData)))
 
                 win = s.recv(3)
                 if win == b'P1W':

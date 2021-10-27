@@ -6,7 +6,7 @@ author : t.katoh
 import random
 
 suit = ["SPADE", "HEART", "DIAMD", "CLOVE"]
-number = ['a', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
+number = ['a', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 
 deck = []
 
@@ -16,7 +16,8 @@ class TrumpCard:
         self.number = number
         
 
-def MakeDeck(deck):
+def MakeDeck():
+    deck = []
     for i in suit:
         for j in number:
             b = TrumpCard(i, j)
@@ -33,7 +34,8 @@ def ShowCards(cards):
         
     return cardnums
 
-def CardDealer(deck, inputcards = None, Appendmode = None):
+def CardDealer(deck, inputcards = None, Appendmode = None):     
+    #引数は引いてくるデッキ、手札に追加したい場合は手札、Appendmodeは1にする 単純に2まい引く時は引数はdeckのみ
 
     cards = []
     
@@ -116,16 +118,16 @@ def SplitCard(cards): #引数はTrumpCard class 返り値はlist
     
     
                 
-def dealerCPU(cards, P1, P2):
+def dealerCPU(deck, cards, P1, P2):
     while 1:
-        if sum(cards) < 17:
-            cards.append(random.randint(1, 11))
-        elif sum(cards) >= 22:
+        if CardSum_Class(cards) < 17:
+            cards = CardDealer(deck, cards, 1)
+        elif CardSum_Class(cards) >= 22:
             return cards
         else:
             break
-    if (sum(cards) < sum(P1) or sum(cards) < sum(P2)):
-        cards.append(random.randint(1, 11))
+    if (CardSum_Class(cards) < CardSum_Class(P1) or CardSum_Class(cards) < CardSum_Class(P2)):
+        cards = CardDealer(deck, cards, 1)
 
     return cards
 
@@ -133,9 +135,9 @@ def WinJudge(P1_cards, P2_cards, D_cards = [2,7]):
     PlayerFlg = None      #1 = P1win   0 = P2win  None = draw
     DealerFlg = None      #1 = deler lost
     WinnerFlg = None      #1 = P1win   0 = P2win  2 = dealerwin  3 = P1, P2Win  None = draw 
-    P1Cardsum = sum(P1_cards)
-    P2Cardsum = sum(P2_cards)
-    DCardsum = sum(D_cards)
+    P1Cardsum = CardSum_Class(P1_cards)
+    P2Cardsum = CardSum_Class(P2_cards)
+    DCardsum = CardSum_Class(D_cards)
 
     P1Judge = 21 - P1Cardsum
     P2Judge = 21 - P2Cardsum
@@ -175,6 +177,8 @@ def WinJudge(P1_cards, P2_cards, D_cards = [2,7]):
                 WinnerFlg = 2
 
     return WinnerFlg
+
+
 def main():
     global deck
     MakeDeck(deck)
