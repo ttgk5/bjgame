@@ -23,7 +23,7 @@ host = "127.0.0.1"
 port = 55580
 argument = (host, port)
 sock.bind(argument)
-# 5 ユーザまで接続を許可
+# MAX_PLAYER まで接続を許可
 sock.listen(MAX_PLAYER)
 clients = []
 
@@ -39,7 +39,6 @@ DCardData  = bjgame.CardDealer(deck)
 
 clientscard = [DCardData]
 
-# 接続済みクライアントは読み込みおよび書き込みを繰り返す
 
 def Win_Procedure(connection):
     global deck
