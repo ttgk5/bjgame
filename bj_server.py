@@ -30,8 +30,12 @@ clients = []
 #ゲーム関連変数
 ConFlg = 0
 doneflg = []
+continueflg = []
 P1Burstflg = 0
 P2Burstflg = 0
+P1Continueflg = 0
+P2Continueflg = 0
+Playcount = 0
 deck = bjgame.MakeDeck()
 P1CardData = bjgame.CardDealer(deck)
 P2CardData = bjgame.CardDealer(deck)
@@ -39,6 +43,29 @@ DCardData  = bjgame.CardDealer(deck)
 
 clientscard = [DCardData]
 
+def GameInit():
+    global doneflg
+    global P1Burstflg
+    global P2Burstflg
+    global P1Continueflg
+    global P2Continueflg
+    global deck
+    global P1CardData 
+    global P2CardData 
+    global DCardData
+
+
+    doneflg = []
+    P1Burstflg = 0
+    P2Burstflg = 0
+    P1Continueflg = 0
+    P2Continueflg = 0
+    deck = bjgame.MakeDeck()
+    P1CardData = bjgame.CardDealer(deck)
+    P2CardData = bjgame.CardDealer(deck)
+    DCardData  = bjgame.CardDealer(deck)
+
+    clientscard = [DCardData]
 
 def Win_Procedure(connection):
     global deck
@@ -51,6 +78,7 @@ def Win_Procedure(connection):
             connection.send("DONE!".encode("utf-8"))
             break
         else:
+            #print(doneflg)
             connection.send("WAITN".encode("utf-8"))
             sleep(2)
 
@@ -70,152 +98,165 @@ def Win_Procedure(connection):
 
 
         if(winner == 1):
+            sleep(0.3)
             connection.send("P1W".encode("utf-8"))
             print("P1 win")
         elif(winner == 0):
+            sleep(0.3)
             connection.send("P2W".encode("utf-8"))
             print("P2 win")
         elif(winner == 2):
+            sleep(0.3)
             connection.send("DLW".encode("utf-8"))
             print("dealer win")
         elif(winner == 3):
+            sleep(0.3)
             connection.send("P12".encode("utf-8"))
             print("p1 p2 win (dealer lost) ")
         else:
+            sleep(0.3)
             connection.send("DRW".encode("utf-8"))
             print("draw")
 
-    
 
-    while 1:
-        pass
-
-def Player_one(connection, address):
+def PlayerThread(connection, address, pflag):
     global deck
     global doneflg
+    global P1Continueflg
+    global P2Continueflg
     global P1CardData
     global P2CardData
     global P1Burstflg
     global P2Burstflg
+    global Playcount
 
     try:
-        #クライアント側から受信する
-        # res = connection.recv(4096)
+        while 1:
+            #クライアント側から受信する
+            # res = connection.recv(4096)
 
-        #先に接続した方がP1
-        P1Flg = 0
-        cnt = 0
-        connection.send("START".encode("utf-8"))
-        sleep(0.1)
-        connection.send("PLAY1".encode("utf-8"))
+            #先に接続した方がP1
+            P1Flg = 0
+            cnt = 0
 
-        while 1:               
-            if ConFlg == 1:
-                connection.send("MATCH".encode("utf-8"))
-                connection.send("NEXTT".encode("utf-8"))
-                break
+            if Playcount == 0:
+                connection.send("START".encode("utf-8"))
+                sleep(1)
+                if pflag == 1:
+                    connection.send("PLAY1".encode("utf-8"))
+                if pflag == 2:
+                    connection.send("PLAY2".encode("utf-8"))
+            else:
+                sleep(1)
+                if pflag == 1:
+                    connection.send("PLAY1".encode("utf-8"))
+                if pflag == 2:
+                    connection.send("PLAY2".encode("utf-8"))
+
+            while 1:               
+                if ConFlg == 1:
+                    connection.send("MATCH".encode("utf-8"))
+                    connection.send("NEXTT".encode("utf-8"))
+                    break
+                    
                 
-              
-        
-        #ディーラーのカードとプレイヤーのカードデータ
-        DealCard = []
-        for i in clientscard:
-            DealCard.extend(i)
+            
+            #ディーラーのカードとプレイヤーのカードデータ
+            DealCard = []
+            for i in clientscard:
+                DealCard.extend(i)
 
-        connection.send(pickle.dumps(DealCard))
+            connection.send(pickle.dumps(DealCard))
 
-        while 1:
-            msg = connection.recv(128)
-            ChangeData = pickle.loads(msg)
 
-            if ChangeData[0] == "1":    #1枚追加
-                P1CardData = bjgame.CardDealer(deck, P1CardData, 1)
-                sleep(0.2)
-                connection.send(pickle.dumps(P1CardData))
+            while 1:
+                msg = connection.recv(128)
+                ChangeData = pickle.loads(msg)
 
-            elif ChangeData[0] == "2":  #交換なし
-                print("no card add")
-                break
+                if ChangeData[0] == "1":    #1枚追加
+                    if pflag == 1:
+                        P1CardData = bjgame.CardDealer(deck, P1CardData, 1)
+                        sleep(0.2)
+                        connection.send(pickle.dumps(P1CardData))
+                    else:
+                        P1CardData = bjgame.CardDealer(deck, P2CardData, 1)
+                        sleep(0.2)
+                        connection.send(pickle.dumps(P2CardData))                    
 
-            elif ChangeData[0] == "3":
-                print("P1 burst")
-                P1Burstflg = 1
-                break
+                elif ChangeData[0] == "2":  #交換なし
+                    print("no card add")
+                    break
+
+                elif ChangeData[0] == "3":
+                    if pflag == 1:
+                        print("P1 burst")
+                        P1Burstflg = 1
+                    else:
+                        print("P2 burst")
+                        P2Burstflg = 1
+
+                    break
+                else:
+                    connection.send("INVAL".encode("utf-8"))
+            
+            doneflg.append(1)
+
+            #debug
+            if pflag == 1:
+                print("1 Waiting for others...")
             else:
-                connection.send("INVAL".encode("utf-8"))
-        
-        doneflg.append(1)
-        print("1 Waiting for others...")
+                print("2 Waiting for others...")
+            #~~
 
-        Win_Procedure(connection)
+            Win_Procedure(connection)
+
+            
+            cont = connection.recv(8)
+            if cont == "CONTINUE":
+                if pflag == 1:
+                    P1Continueflg = 1
+                    print(P1Continueflg)
+                elif pflag == 2:
+                    P2Continueflg = 1
+                    print(P2Continueflg)
+                sleep(0.5)
+                
+            elif cont == "ENDGAMES":
+                break
 
     except Exception as e:
         print(e)
 
-def Player_two(connection, address):
-    global doneflg
-    global P1CardData
-    global P2CardData
-    global P1Burstflg
-    global P2Burstflg
+def gamemanager():
+    global continueflg
+    global clients
+    global Playcount
+    global P1Continueflg
+    global P2Continueflg
+    cnt = 0
+
+    print("made thread")
     try:
-        #クライアント側から受信する
-        # res = connection.recv(4096)
-
-        #先に接続した方がP1
-        P1Flg = 0
-        cnt = 0
-        connection.send("START".encode("utf-8"))
-        sleep(0.1)
-        connection.send("PLAY2".encode("utf-8"))
-        sleep(0.1)
-        connection.send("MATCH".encode("utf-8"))
-        sleep(0.2)
-        connection.send("NEXTT".encode("utf-8"))
-
-
-        #ディーラーのカードとプレイヤーのカードデータ
-        DealCard = []
-        for i in clientscard:
-            DealCard.extend(i)
-
-        connection.send(pickle.dumps(DealCard))
-
         while 1:
-            msg = connection.recv(128)
-            ChangeData = pickle.loads(msg)
-
-            if ChangeData[0] == "1":    #1枚追加
-                P2CardData = bjgame.CardDealer(deck, P2CardData, 1)
-                sleep(0.2)
-                connection.send(pickle.dumps(P2CardData))
-
-            elif ChangeData[0] == "2":  #交換なし
-                print("no card add")
-                break
-
-            elif ChangeData[0] == "3":
-                print("P2 burst")
-                P2Burstflg = 1
-                break
-            else:
-                connection.send("INVAL".encode("utf-8"))
-        
-        doneflg.append(1)
-        print("2 Waiting for others...")
-        Win_Procedure(connection)
-    
-
-
+            if P1Continueflg == 1:
+                print("p1cont")
+            if P2Continueflg == 1:
+                print("p2cont")
+            if P1Continueflg + P2Continueflg == MAX_PLAYER:
+                print("initialized")
+                GameInit()
+                Playcount = 1 + Playcount
     except Exception as e:
         print(e)
-
 
 
 
 def main():
     global ConFlg
     global clients
+
+    th = threading.Thread(target=gamemanager, daemon=True)
+    th.start()
     while True:
         try:
             # 接続要求を受信
@@ -238,9 +279,11 @@ def main():
 
         # スレッド作成
         if(len(clients) == 2):
-            thread = threading.Thread(target=Player_two, args=(conn, addr), daemon=True)
+            pflag = 2
+            thread = threading.Thread(target=PlayerThread, args=(conn, addr, pflag), daemon=True)
         else:
-            thread = threading.Thread(target=Player_one, args=(conn, addr), daemon=True)
+            pflag = 1
+            thread = threading.Thread(target=PlayerThread, args=(conn, addr, pflag), daemon=True)
         # スレッドスタート
         thread.start()
 

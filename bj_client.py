@@ -8,6 +8,7 @@ Created on Fri Oct 22 21:13:10 2021
 
 import socket
 import pickle
+import sys
 from time import sleep
 
 import bjgame
@@ -26,6 +27,8 @@ except Exception as e:
     print(e)
 
 print(s)
+
+
 while (True):
     try:
         print("\n")
@@ -47,7 +50,7 @@ while (True):
             elif res == b'NEXTT':
                 break
             else:
-                print(res.decode("utf-8"))
+                print(res)
 
         
 
@@ -140,6 +143,21 @@ while (True):
                     
                 elif win == b'DRW':
                     print("Draw!")
+            break
+
+        print("contunue?  yes or no")
+        while 1:
+            cont = input()
+            if cont == "no":
+                sleep(0.5)
+                s.send("ENDGAMES")
+                sys.exit()
+            elif cont == "yes":
+                sleep(0.5)
+                s.send("CONTINUE".encode("utf-8"))
+                msg = 0
+                break
+            
 
     except Exception as e:
         print(e)
