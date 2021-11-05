@@ -50,7 +50,7 @@ while (True):
             elif res == b'NEXTT':
                 break
             else:
-                print(res)
+                print(res.decode("utf-8"))
 
         
 
@@ -150,13 +150,25 @@ while (True):
             cont = input()
             if cont == "no":
                 sleep(0.5)
-                s.send("ENDGAMES")
+                s.send("ENDGAMES".encode("utf-8"))
+                print("see you nex time!")
                 sys.exit()
             elif cont == "yes":
                 sleep(0.5)
                 s.send("CONTINUE".encode("utf-8"))
                 msg = 0
                 break
+        
+        print("other player waitin...")
+        res = s.recv(8)
+        while 1:
+            if res == b'CONTINUE':
+                break
+            elif res == b'ENDGAMES':
+                print("see you next time!")
+                sys.exit()
+            else:
+                print(res.decode("utf-8"))
             
 
     except Exception as e:

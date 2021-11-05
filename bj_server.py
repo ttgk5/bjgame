@@ -33,8 +33,9 @@ doneflg = []
 continueflg = []
 P1Burstflg = 0
 P2Burstflg = 0
-P1Continueflg = 0
-P2Continueflg = 0
+P1Continueflg = None
+P2Continueflg = None
+initflg = []
 Playcount = 0
 deck = bjgame.MakeDeck()
 P1CardData = bjgame.CardDealer(deck)
@@ -49,6 +50,7 @@ def GameInit():
     global P2Burstflg
     global P1Continueflg
     global P2Continueflg
+    global initflg
     global deck
     global P1CardData 
     global P2CardData 
@@ -58,8 +60,9 @@ def GameInit():
     doneflg = []
     P1Burstflg = 0
     P2Burstflg = 0
-    P1Continueflg = 0
-    P2Continueflg = 0
+    #P1Continueflg = 0
+    #P2Continueflg = 0
+    initflg = []
     deck = bjgame.MakeDeck()
     P1CardData = bjgame.CardDealer(deck)
     P2CardData = bjgame.CardDealer(deck)
@@ -124,27 +127,30 @@ def PlayerThread(connection, address, pflag):
     global doneflg
     global P1Continueflg
     global P2Continueflg
+    global initflg
     global P1CardData
     global P2CardData
     global P1Burstflg
     global P2Burstflg
     global Playcount
 
+    contflg = 0
+
     try:
-        while 1:
+        while contflg == 0:
             #クライアント側から受信する
             # res = connection.recv(4096)
 
             #先に接続した方がP1
-            P1Flg = 0
-            cnt = 0
-
+            print(Playcount)
             if Playcount == 0:
                 connection.send("START".encode("utf-8"))
                 sleep(1)
                 if pflag == 1:
                     connection.send("PLAY1".encode("utf-8"))
+                    P1Continueflg = None
                 if pflag == 2:
+                    P2Continueflg = None
                     connection.send("PLAY2".encode("utf-8"))
             else:
                 sleep(1)
@@ -212,18 +218,72 @@ def PlayerThread(connection, address, pflag):
 
             
             cont = connection.recv(8)
-            if cont == "CONTINUE":
-                if pflag == 1:
-                    P1Continueflg = 1
-                    print(P1Continueflg)
-                elif pflag == 2:
-                    P2Continueflg = 1
-                    print(P2Continueflg)
-                sleep(0.5)
-                
-            elif cont == "ENDGAMES":
-                break
+            while 1:
+                if cont == b"CONTINUE":
+                    if pflag == 1:
+                        P1Continueflg = 1
+                        print("P1 continue")
+                        #print(P1Continueflg)
+                        sleep(0.5)
+                        #connection.send("CONTINUE".encode("utf-8"))
+                        break
+                    elif pflag == 2:
+                        P2Continueflg = 1
+                        print("P2 Continue")
+                        #print(P2Continueflg)
+                        sleep(0.5)
+                        #connection.send("CONTINUE".encode("utf-8"))
+                        break
 
+                elif cont == b"ENDGAMES":
+                    if pflag == 1:
+                        P1Continueflg = 0
+                        print("P1 endgame")
+                        #print(P1Continueflg)
+                        sleep(0.5)
+                        #connection.send("CONTINUE".encode("utf-8"))
+                        break
+                    elif pflag == 2:
+                        P2Continueflg = 0
+                        print("P2 endgame")
+                        #print(P2Continueflg)
+                        sleep(0.5)
+                        #connection.send("CONTINUE".encode("utf-8"))
+                        break
+
+            print("other player waitn...")
+            while 1:
+                if P1Continueflg != None and P2Continueflg != None:
+                    if P1Continueflg + P2Continueflg == 2:
+                        initflg.append(1)
+                        connection.send("CONTINUE".encode("utf-8"))
+                        break
+
+                elif P1Continueflg == 1 and P2Continueflg == 0:
+                    initflg.append(1)
+                    if pflag == 1:
+                        sleep(0.5)
+                        connection.send("CONTINUE".encode("utf-8"))
+                        break
+                    elif pflag == 2:
+                        contflg = 1
+                        break
+
+                elif P1Continueflg == 0 and P2Continueflg == 1:
+                    initflg.append(1)
+                    if pflag == 2:
+                        sleep(0.5)
+                        connection.send("CONTINUE".encode("utf-8"))
+                        break
+                    elif pflag == 1:
+                        contflg = 1
+                        break
+                elif P1Continueflg == 0 and P2Continueflg == 0:
+                    contflg = 1
+                    break
+
+
+        print("P%d thread dead" % (pflag))
     except Exception as e:
         print(e)
 
@@ -233,16 +293,13 @@ def gamemanager():
     global Playcount
     global P1Continueflg
     global P2Continueflg
+    global initflg
     cnt = 0
 
     print("made thread")
     try:
         while 1:
-            if P1Continueflg == 1:
-                print("p1cont")
-            if P2Continueflg == 1:
-                print("p2cont")
-            if P1Continueflg + P2Continueflg == MAX_PLAYER:
+            if len(initflg) == MAX_PLAYER:
                 print("initialized")
                 GameInit()
                 Playcount = 1 + Playcount
