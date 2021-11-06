@@ -2,8 +2,10 @@
 ネットワーク課題用リポジトリ
 n人対戦ブラックジャックを作る予定
 
-# enviroment
-Python 3
+# dev enviroment
+CentOS 7
+Python 3.6.8
+Visual Studio Code
 
 # about codes
 
