@@ -36,6 +36,7 @@ P2Burstflg = 0
 P1Continueflg = None
 P2Continueflg = None
 initflg = []
+endflg = []
 Playcount = 0
 deck = bjgame.MakeDeck()
 P1CardData = bjgame.CardDealer(deck)
@@ -55,11 +56,16 @@ def GameInit():
     global P1CardData 
     global P2CardData 
     global DCardData
+    global endflg
+    global ConFlg
+    global clientscard
 
 
     doneflg = []
+    endflg = []
     P1Burstflg = 0
     P2Burstflg = 0
+    ConFlg = 0
     #P1Continueflg = 0
     #P2Continueflg = 0
     initflg = []
@@ -86,7 +92,7 @@ def Win_Procedure(connection):
             sleep(2)
 
     if (P1Burstflg and P2Burstflg):
-        print("dealer win")
+        #print("dealer win")
         sleep(0.5)
         connection.send("SHOWD".encode("utf-8"))
 
@@ -128,6 +134,7 @@ def PlayerThread(connection, address, pflag):
     global P1Continueflg
     global P2Continueflg
     global initflg
+    #global endflg
     global P1CardData
     global P2CardData
     global P1Burstflg
@@ -162,7 +169,9 @@ def PlayerThread(connection, address, pflag):
             while 1:               
                 if ConFlg == 1:
                     connection.send("MATCH".encode("utf-8"))
+                    sleep(0.5)
                     connection.send("NEXTT".encode("utf-8"))
+                    sleep(0.5)
                     break
                     
                 
@@ -190,15 +199,15 @@ def PlayerThread(connection, address, pflag):
                         connection.send(pickle.dumps(P2CardData))                    
 
                 elif ChangeData[0] == "2":  #交換なし
-                    print("no card add")
+                    print("PlayerThread %d : no cards add"%(pflag))
                     break
 
                 elif ChangeData[0] == "3":
                     if pflag == 1:
-                        print("P1 burst")
+                        print("PlayerThread %d : Burst! "%(pflag))
                         P1Burstflg = 1
                     else:
-                        print("P2 burst")
+                        print("PlayerThread %d : Burst! "%(pflag))
                         P2Burstflg = 1
 
                     break
@@ -209,9 +218,9 @@ def PlayerThread(connection, address, pflag):
 
             #debug
             if pflag == 1:
-                print("1 Waiting for others...")
+                print("PlayerThread %d : Waiting for others ..."%(pflag))
             else:
-                print("2 Waiting for others...")
+                print("PlayerThread %d : Waiting for others ..."%(pflag))
             #~~
 
             Win_Procedure(connection)
@@ -222,14 +231,14 @@ def PlayerThread(connection, address, pflag):
                 if cont == b"CONTINUE":
                     if pflag == 1:
                         P1Continueflg = 1
-                        print("P1 continue")
+                        print("PlayerThread %d : Continue "%(pflag))
                         #print(P1Continueflg)
                         sleep(0.5)
                         #connection.send("CONTINUE".encode("utf-8"))
                         break
                     elif pflag == 2:
                         P2Continueflg = 1
-                        print("P2 Continue")
+                        print("PlayerThread %d : Continue "%(pflag))
                         #print(P2Continueflg)
                         sleep(0.5)
                         #connection.send("CONTINUE".encode("utf-8"))
@@ -238,20 +247,22 @@ def PlayerThread(connection, address, pflag):
                 elif cont == b"ENDGAMES":
                     if pflag == 1:
                         P1Continueflg = 0
-                        print("P1 endgame")
+                        endflg.append(1)
+                        print("PlayerThread %d : P1 endgame"%(pflag))
                         #print(P1Continueflg)
                         sleep(0.5)
                         #connection.send("CONTINUE".encode("utf-8"))
                         break
                     elif pflag == 2:
                         P2Continueflg = 0
-                        print("P2 endgame")
+                        endflg.append(1)
+                        print("PlayerThread %d : P2 endgame"%(pflag))
                         #print(P2Continueflg)
                         sleep(0.5)
                         #connection.send("CONTINUE".encode("utf-8"))
                         break
 
-            print("other player waitn...")
+            print("PlayerThread %d : other player waitn..." % (pflag))
             while 1:
                 if P1Continueflg != None and P2Continueflg != None:
                     if P1Continueflg + P2Continueflg == 2:
@@ -259,7 +270,7 @@ def PlayerThread(connection, address, pflag):
                         connection.send("CONTINUE".encode("utf-8"))
                         break
 
-                elif P1Continueflg == 1 and P2Continueflg == 0:
+                if P1Continueflg == 1 and P2Continueflg == 0:
                     initflg.append(1)
                     if pflag == 1:
                         sleep(0.5)
@@ -269,7 +280,7 @@ def PlayerThread(connection, address, pflag):
                         contflg = 1
                         break
 
-                elif P1Continueflg == 0 and P2Continueflg == 1:
+                if P1Continueflg == 0 and P2Continueflg == 1:
                     initflg.append(1)
                     if pflag == 2:
                         sleep(0.5)
@@ -278,14 +289,21 @@ def PlayerThread(connection, address, pflag):
                     elif pflag == 1:
                         contflg = 1
                         break
-                elif P1Continueflg == 0 and P2Continueflg == 0:
+                if len(endflg) == MAX_PLAYER:
                     contflg = 1
                     break
 
-
-        print("P%d thread dead" % (pflag))
+        
+        print("PlayerThread %d : thread dead" % (pflag))
     except Exception as e:
         print(e)
+
+    finally:
+        clients.remove((connection, address))
+        print(clients)
+
+        connection.close()
+    
 
 def gamemanager():
     global continueflg
@@ -296,13 +314,19 @@ def gamemanager():
     global initflg
     cnt = 0
 
-    print("made thread")
+    print("gamemanager: Thread created")
     try:
         while 1:
             if len(initflg) == MAX_PLAYER:
-                print("initialized")
+                print("gamemanager: initialized")
                 GameInit()
-                Playcount = 1 + Playcount
+                Playcount =+ 1
+            if len(endflg) == MAX_PLAYER:
+                sleep(2)
+                print("gamemanager: initialized (because no players)")
+                GameInit()
+                Playcount =+ 1
+            
     except Exception as e:
         print(e)
 
@@ -330,12 +354,12 @@ def main():
         print("\r\n")
         # 待受中にアクセスしてきたクライアントを追加
         clients.append((conn, addr))
-        if(len(clients) == 2):
+        if(len(clients) == MAX_PLAYER):
             ConFlg = 1
             clientscard.extend([P1CardData, P2CardData])
 
         # スレッド作成
-        if(len(clients) == 2):
+        if(len(clients) == MAX_PLAYER):
             pflag = 2
             thread = threading.Thread(target=PlayerThread, args=(conn, addr, pflag), daemon=True)
         else:
