@@ -13,30 +13,30 @@ from time import sleep
 
 import bjgame
 
-P1flg = 0
-P2flg = 0
-DCardData = []
-P1CardData = []
-P2CardData = []
+P1_flag = 0
+P2_flag = 0
+dealer_card_data = []
+P1_card_data = []
+P2_card_data = []
 
-def GameInit():
-    global P1flg
-    global P2flg
-    global DCardData
-    global P1CardData
-    global P2CardData
+def game_var_init():
+    global P1_flag
+    global P2_flag
+    global dealer_card_data
+    global P1_card_data
+    global P2_card_data
 
-    P1flg = 0
-    P2flg = 0
-    DCardData = []
-    P1CardData = []
-    P2CardData = []
+    P1_flag = 0
+    P2_flag = 0
+    dealer_card_data = []
+    P1_card_data = []
+    P2_card_data = []
 
 
 def main():
 
-    global P1flg
-    global P2flg
+    global P1_flag
+    global P2_flag
 
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -62,10 +62,10 @@ def main():
                     print("Welcome BLACKJACK game! please wait...")
                 elif res == b'PLAY1':
                     print("You are player 1")
-                    P1flg = 1
+                    P1_flag = 1
                 elif res == b'PLAY2':
                     print("You are player 2")
-                    P2flg = 1
+                    P2_flag = 1
                 elif res == b'MATCH':
                     print("Matching complate!")
                     break
@@ -81,21 +81,21 @@ def main():
 
             CardData = pickle.loads(msg)
 
-            DCardData = [CardData[0], CardData[1]]
-            P1CardData = [CardData[2], CardData[3]]
-            P2CardData = [CardData[4], CardData[5]]
+            dealer_card_data = [CardData[0], CardData[1]]
+            P1_card_data = [CardData[2], CardData[3]]
+            P2_card_data = [CardData[4], CardData[5]]
 
             print("Dealer's Card")
-            dbuf = bjgame.ShowCards(DCardData)
+            dbuf = bjgame.ShowCards(dealer_card_data)
             print(dbuf[0])
 
             print("Cards Dealt")
-            if P1flg == 1:
-                print(bjgame.ShowCards(P1CardData))
-                PCardData = P1CardData
-            elif P2flg == 1:
-                print(bjgame.ShowCards(P2CardData))
-                PCardData = P2CardData
+            if P1_flag == 1:
+                print(bjgame.ShowCards(P1_card_data))
+                PCardData = P1_card_data
+            elif P2_flag == 1:
+                print(bjgame.ShowCards(P2_card_data))
+                PCardData = P2_card_data
 
             while 1:
                     if(bjgame.CardSum_Class(PCardData) > 21):
@@ -146,12 +146,12 @@ def main():
                 res = s.recv(5)
                 if res == b'SHOWD':
                     print("Dealer win!")
-                    print(DCardData)
+                    print(dealer_card_data)
                 elif res == b'GOWIN':
-                    DCardData = s.recv(256)
+                    dealer_card_data = s.recv(256)
                     print("Dealer's cards")
                     
-                    print(bjgame.ShowCards(pickle.loads(DCardData)))
+                    print(bjgame.ShowCards(pickle.loads(dealer_card_data)))
 
                     win = s.recv(3)
                     if win == b'P1W':
@@ -188,7 +188,7 @@ def main():
             res = s.recv(8)
             while 1:
                 if res == b'CONTINUE':
-                    GameInit()
+                    game_var_init()
                     break
                 elif res == b'ENDGAMES':
                     print("see you next time!")
