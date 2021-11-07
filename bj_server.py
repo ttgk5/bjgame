@@ -76,7 +76,7 @@ def game_var_init():
 
     clients_card_data = [dealer_card_data, P1_card_data, P2_card_data]
 
-def winner_judge(connection):
+def winner_judge(connection,pflag):
     global deck
     global dealer_card_data
     global P1_card_data
@@ -90,42 +90,56 @@ def winner_judge(connection):
             #print(card_sel_comp_flag)
             connection.send("WAITN".encode("utf-8"))
             sleep(2)
-
+    """
     if (P1_burst_flag and P2_burst_flag):
         #print("dealer win")
         sleep(0.5)
         connection.send("SHOWD".encode("utf-8"))
+    """
+    
+    sleep(0.5)
+    connection.send("GOWIN".encode("utf-8"))
+    d = bjgame.dealerCPU(deck, dealer_card_data, P2_card_data, P1_card_data)
+    all_card_data = [P1_card_data, P2_card_data, d]
+    sleep(0.1)
 
-    else:
-        sleep(0.5)
-        connection.send("GOWIN".encode("utf-8"))
-        d = bjgame.dealerCPU(deck, dealer_card_data, P2_card_data, P1_card_data)
-        sleep(0.1)
-        connection.send(pickle.dumps(d))
-        sleep(0.1)
-        winner = bjgame.WinJudge(P1_card_data, P2_card_data, d)
+    connection.send(pickle.dumps(all_card_data))
+    sleep(0.1)
+    player_card = [P1_card_data, P2_card_data]
+    result = bjgame.WinJudge(player_card, d)
 
+    while 1:
+        rdyflg = connection.recv(5)
+        if rdyflg == b"READY":
+            break
+    if(pflag == 1):
+        if result[pflag-1] == 0:
+            sleep(0.3)
+            connection.send("lose".encode("utf-8"))
+            print("P%d lose" %(pflag))
+        if result[pflag] == 1:
+            sleep(0.3)
+            connection.send("draw".encode("utf-8"))
+            print("P%d draw" %(pflag))
+        if result[pflag] == 2:
+            sleep(0.3)
+            connection.send("win!".encode("utf-8"))
+            print("P%d win" %(pflag))
 
-        if(winner == 1):
+    elif(pflag == 2):
+        if result[pflag-1] == 0:
             sleep(0.3)
-            connection.send("P1W".encode("utf-8"))
-            print("P1 win")
-        elif(winner == 0):
+            connection.send("lose".encode("utf-8"))
+            print("P%d lose" %(pflag))
+        if result[pflag-1] == 1:
             sleep(0.3)
-            connection.send("P2W".encode("utf-8"))
-            print("P2 win")
-        elif(winner == 2):
+            connection.send("draw".encode("utf-8"))
+            print("P%d draw" %(pflag))
+        if result[pflag-1] == 2:
             sleep(0.3)
-            connection.send("DLW".encode("utf-8"))
-            print("dealer win")
-        elif(winner == 3):
-            sleep(0.3)
-            connection.send("P12".encode("utf-8"))
-            print("p1 p2 win (dealer lost) ")
-        else:
-            sleep(0.3)
-            connection.send("DRW".encode("utf-8"))
-            print("draw")
+            connection.send("win!".encode("utf-8"))
+            print("P%d win" %(pflag))
+
 
 def player_allocation(connection, address):
     #接続してきたプレイヤーの番号を割り振る
@@ -250,7 +264,7 @@ def player_main_thread(connection, address):
                 print("player_main_thread %d : Waiting for others ..."%(pflag))
             #~~
 
-            winner_judge(connection)
+            winner_judge(connection,pflag)
 
             
             cont = connection.recv(8)
@@ -328,7 +342,9 @@ def player_main_thread(connection, address):
 
         
         print("player_main_thread %d : thread dead" % (pflag))
+
     except Exception as e:
+        print("player_main_thread %d : " %(pflag) , end="")
         print(e)
 
     finally:
@@ -353,6 +369,7 @@ def game_manager():
         while 1:
             if len(game_var_init_flag) == MAX_PLAYER:
                 print("game_manager: initialized")
+                sleep(0.5)
                 game_var_init()
                 game_play_counter += 1
             if len(game_end_flag) == MAX_PLAYER:

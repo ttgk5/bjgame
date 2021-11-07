@@ -115,9 +115,7 @@ def SplitCard(cards): #引数はTrumpCard class 返り値はlist
             cardlist.append(str(j))
         
     return cardlist
-    
-    
-                
+              
 def dealerCPU(deck, cards, P1, P2):
     while 1:
         if CardSum_Class(cards) < 17:
@@ -131,52 +129,53 @@ def dealerCPU(deck, cards, P1, P2):
 
     return cards
 
-def WinJudge(P1_cards, P2_cards, D_cards = [2,7]):       
-    PlayerFlg = None      #1 = P1win   0 = P2win  None = draw
-    DealerFlg = None      #1 = deler lost
-    WinnerFlg = None      #1 = P1win   0 = P2win  2 = dealerwin  3 = P1, P2Win  None = draw 
-    P1Cardsum = CardSum_Class(P1_cards)
-    P2Cardsum = CardSum_Class(P2_cards)
-    DCardsum = CardSum_Class(D_cards)
+def index_Multi(List,liter):
+    #Listはリスト本体・literは検索したい文字
+    index_L = []
+    for val in range(0,len(List)):
+        if liter == List[val]:
+            index_L.append(val)
+    return index_L
 
-    P1Judge = 21 - P1Cardsum
-    P2Judge = 21 - P2Cardsum
-    DJudge  = 21 - DCardsum
 
-    if (P1Cardsum > 21):    #P1 burst
-        PlayerFlg = 0
-    elif (P2Cardsum > 21):  #P2 burst
-        PlayerFlg = 1
-    elif (DCardsum > 21):
-        DealerFlg = 1
-        return 3
+def WinJudge(Clients_card, D_cards):
     
-    if(PlayerFlg == None):
-        if(P1Judge < P2Judge):  
-            if(P1Judge < DJudge):
-                WinnerFlg = 1
-            elif(DJudge < P1Judge):
-                WinnerFlg = 2
-            else:
-                WinnerFlg = None
-                
-
-        elif(P2Judge < P1Judge):
-            if(P2Judge < DJudge):
-                WinnerFlg = 0
-
-            elif(DJudge < P2Judge):
-                WinnerFlg = 2
-            else:
-                WinnerFlg = None
-                
+    players = len(Clients_card)
+    
+    #プレイヤーのカード管理情報は配列で管理,インデックスが若い順にp1, p2 ...    
+    player_card_sum = []
+    #負け = 0 勝ち = 2 引き分け = 1
+    player_winjudge_flag = [0 for i in range(players)]
+    #バーストした場合は1が立つ
+    player_burst_flag = []
+    
+    DCardsum = CardSum_Class(D_cards)
+    
+    
+    for i in range(players):
+        cardsum_buffer = CardSum_Class(Clients_card[i])
+        player_card_sum.append(cardsum_buffer)
+        
+        
+        if player_card_sum[i] > 21:
+            player_burst_flag.append(1)
+            player_card_sum[i] = 0
         else:
-            if(P1Judge < DJudge):
-                WinnerFlg = 3
-            else:
-                WinnerFlg = 2
-
-    return WinnerFlg
+            player_burst_flag.append(0)
+        
+        if DCardsum < player_card_sum[i]:
+            player_winjudge_flag[i] = 2
+        
+        elif DCardsum == player_card_sum[i]:
+            player_winjudge_flag[i] = 1
+        
+        if DCardsum > 21:
+            player_winjudge_flag[i] = 2
+        
+            
+    
+    return player_winjudge_flag
+        
 
 
 def main():
@@ -227,4 +226,6 @@ def main():
     else:
         print("draw")
 if __name__ == "__main__":
-    main()
+    #main()
+    pass
+    

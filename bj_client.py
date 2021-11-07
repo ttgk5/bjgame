@@ -13,6 +13,7 @@ from time import sleep
 
 import bjgame
 
+player_flag = 0
 P1_flag = 0
 P2_flag = 0
 dealer_card_data = []
@@ -25,7 +26,9 @@ def game_var_init():
     global dealer_card_data
     global P1_card_data
     global P2_card_data
+    global player_flag
 
+    player_flag = 0
     P1_flag = 0
     P2_flag = 0
     dealer_card_data = []
@@ -37,6 +40,7 @@ def main():
 
     global P1_flag
     global P2_flag
+    global player_flag
 
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -52,7 +56,6 @@ def main():
 
     while (True):
         try:
-            print("\n")
             # サーバーからのレスポンス
             while 1:
                 
@@ -62,9 +65,11 @@ def main():
                     print("Welcome BLACKJACK game! please wait...")
                 elif res == b'PLAY1':
                     print("You are player 1")
+                    player_flag = 1
                     P1_flag = 1
                 elif res == b'PLAY2':
                     print("You are player 2")
+                    player_flag = 2
                     P2_flag = 1
                 elif res == b'MATCH':
                     print("Matching complate!")
@@ -148,26 +153,36 @@ def main():
                     print("Dealer win!")
                     print(dealer_card_data)
                 elif res == b'GOWIN':
-                    dealer_card_data = s.recv(256)
+                    all_card_data = s.recv(512)
+                    all_card_data = pickle.loads(all_card_data)
+
+                    dealer_card_data = all_card_data[2]
+
+                    if player_flag == 1:
+                        others_card_data = all_card_data[1]
+                    elif player_flag == 2:
+                        others_card_data = all_card_data[0]
+
                     print("Dealer's cards")
                     
-                    print(bjgame.ShowCards(pickle.loads(dealer_card_data)))
+                    print(bjgame.ShowCards(dealer_card_data))
 
-                    win = s.recv(3)
-                    if win == b'P1W':
-                        print("P1 win!")
+                    sleep(0.5)
+                    s.send("READY".encode("utf-8"))
 
-                    elif win == b'P2W':
-                        print("P2 win! ")
+                    win = s.recv(4)
+                    if win == b'win!':
+                        print("You Win!")
+
+
+                    elif win == b'lose':
+                        print("You lose! ")
                         
-                    elif win == b'P12':
-                        print("P1 P2 win!")
-                        
-                    elif win == b'DLW':
-                        print("Dealer win!")
-                        
-                    elif win == b'DRW':
+                    elif win == b'draw':
                         print("Draw!")
+
+                print("Other player's Cards")
+                print(bjgame.ShowCards(others_card_data))     
                 break
 
             print("contunue?  yes or no")
