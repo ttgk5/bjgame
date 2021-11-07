@@ -15,13 +15,22 @@ import bjgame
 
 P1flg = 0
 P2flg = 0
+DCardData = []
+P1CardData = []
+P2CardData = []
 
 def GameInit():
     global P1flg
     global P2flg
+    global DCardData
+    global P1CardData
+    global P2CardData
 
     P1flg = 0
     P2flg = 0
+    DCardData = []
+    P1CardData = []
+    P2CardData = []
 
 
 def main():
@@ -59,16 +68,19 @@ def main():
                     P2flg = 1
                 elif res == b'MATCH':
                     print("Matching complate!")
+                    break
                 elif res == b'NEXTT':
                     break
                 else:
                     print(res.decode("utf-8"))
 
-            
+            sleep(0.5)
+            s.send("READY".encode("utf-8"))
 
             msg = s.recv(256)
 
             CardData = pickle.loads(msg)
+
             DCardData = [CardData[0], CardData[1]]
             P1CardData = [CardData[2], CardData[3]]
             P2CardData = [CardData[4], CardData[5]]

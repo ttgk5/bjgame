@@ -37,6 +37,7 @@ P1Continueflg = None
 P2Continueflg = None
 initflg = []
 endflg = []
+gameendflg = []
 Playcount = 0
 deck = bjgame.MakeDeck()
 P1CardData = bjgame.CardDealer(deck)
@@ -74,7 +75,7 @@ def GameInit():
     P2CardData = bjgame.CardDealer(deck)
     DCardData  = bjgame.CardDealer(deck)
 
-    clientscard = [DCardData]
+    clientscard = [DCardData, P1CardData, P2CardData]
 
 def Win_Procedure(connection):
     global deck
@@ -127,13 +128,23 @@ def Win_Procedure(connection):
             connection.send("DRW".encode("utf-8"))
             print("draw")
 
+def Player_Allocation(connection, address):
+    #接続してきたプレイヤーの番号を割り振る
+    cnt = 0
+    for i in clients:
+        cnt += 1
+        if i == (connection, address):
+            break
+    
+    return cnt
 
-def PlayerThread(connection, address, pflag):
+def PlayerThread(connection, address):
     global deck
     global doneflg
     global P1Continueflg
     global P2Continueflg
     global initflg
+    global gameendflg
     #global endflg
     global P1CardData
     global P2CardData
@@ -149,7 +160,9 @@ def PlayerThread(connection, address, pflag):
             # res = connection.recv(4096)
 
             #先に接続した方がP1
+            pflag = Player_Allocation(connection, address)
             print(Playcount)
+
             if Playcount == 0:
                 connection.send("START".encode("utf-8"))
                 sleep(1)
@@ -160,26 +173,41 @@ def PlayerThread(connection, address, pflag):
                     P2Continueflg = None
                     connection.send("PLAY2".encode("utf-8"))
             else:
-                sleep(1)
+                while 1:
+                    if len(gameendflg) == MAX_PLAYER:
+                        break
                 if pflag == 1:
                     connection.send("PLAY1".encode("utf-8"))
+                    sleep(0.5)
                 if pflag == 2:
                     connection.send("PLAY2".encode("utf-8"))
+                    sleep(0.5)
 
             while 1:               
-                if ConFlg == 1:
+                if len(clients) == MAX_PLAYER:
                     connection.send("MATCH".encode("utf-8"))
                     sleep(0.5)
+                    """
                     connection.send("NEXTT".encode("utf-8"))
                     sleep(0.5)
+                    """
                     break
                     
                 
             
             #ディーラーのカードとプレイヤーのカードデータ
+
+            rdyflg = connection.recv(5)
+            while 1:
+                if rdyflg == b'READY':
+                    print("PlayerThread %d : Clients READY" % (pflag))
+                    break
+            
             DealCard = []
+            gameendflg = []
             for i in clientscard:
                 DealCard.extend(i)
+            sleep(0.5)
 
             connection.send(pickle.dumps(DealCard))
 
@@ -266,15 +294,19 @@ def PlayerThread(connection, address, pflag):
             while 1:
                 if P1Continueflg != None and P2Continueflg != None:
                     if P1Continueflg + P2Continueflg == 2:
+                        gameendflg.append(1)
                         initflg.append(1)
                         connection.send("CONTINUE".encode("utf-8"))
+                        sleep(1)
                         break
 
                 if P1Continueflg == 1 and P2Continueflg == 0:
                     initflg.append(1)
+                    gameendflg.append(1)
                     if pflag == 1:
                         sleep(0.5)
                         connection.send("CONTINUE".encode("utf-8"))
+                        sleep(1)
                         break
                     elif pflag == 2:
                         contflg = 1
@@ -282,9 +314,11 @@ def PlayerThread(connection, address, pflag):
 
                 if P1Continueflg == 0 and P2Continueflg == 1:
                     initflg.append(1)
+                    gameendflg.append(1)
                     if pflag == 2:
                         sleep(0.5)
                         connection.send("CONTINUE".encode("utf-8"))
+                        sleep(1)
                         break
                     elif pflag == 1:
                         contflg = 1
@@ -312,6 +346,7 @@ def gamemanager():
     global P1Continueflg
     global P2Continueflg
     global initflg
+    global gameendflg
     cnt = 0
 
     print("gamemanager: Thread created")
@@ -320,12 +355,15 @@ def gamemanager():
             if len(initflg) == MAX_PLAYER:
                 print("gamemanager: initialized")
                 GameInit()
-                Playcount =+ 1
+                Playcount += 1
             if len(endflg) == MAX_PLAYER:
                 sleep(2)
                 print("gamemanager: initialized (because no players)")
                 GameInit()
-                Playcount =+ 1
+                Playcount += 1
+
+            if len(clients) == 0:
+                gameendflg = [1,1]
             
     except Exception as e:
         print(e)
@@ -359,12 +397,14 @@ def main():
             clientscard.extend([P1CardData, P2CardData])
 
         # スレッド作成
+        """
         if(len(clients) == MAX_PLAYER):
             pflag = 2
             thread = threading.Thread(target=PlayerThread, args=(conn, addr, pflag), daemon=True)
         else:
             pflag = 1
-            thread = threading.Thread(target=PlayerThread, args=(conn, addr, pflag), daemon=True)
+        """
+        thread = threading.Thread(target=PlayerThread, args=(conn, addr), daemon=True)
         # スレッドスタート
         thread.start()
 
