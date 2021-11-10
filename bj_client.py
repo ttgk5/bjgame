@@ -20,6 +20,7 @@ dealer_card_data = []
 P1_card_data = []
 P2_card_data = []
 
+#ゲーム変数初期化
 def game_var_init():
     global P1_flag
     global P2_flag
@@ -42,6 +43,7 @@ def main():
     global P2_flag
     global player_flag
 
+    #サーバーに接続要求
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         host = "127.0.0.1"
@@ -53,47 +55,56 @@ def main():
 
     print(s)
 
-
+    #メインループ
     while (True):
         try:
-            # サーバーからのレスポンス
+            # サーバーからのレスポンス 5byteで受信 プレイヤーナンバー、マッチングなど
             while 1:
                 
                 res = s.recv(5)
 
                 if res == b'START':
                     print("Welcome BLACKJACK game! please wait...")
+                    
                 elif res == b'PLAY1':
                     print("You are player 1")
                     player_flag = 1
                     P1_flag = 1
+
                 elif res == b'PLAY2':
                     print("You are player 2")
                     player_flag = 2
                     P2_flag = 1
+
                 elif res == b'MATCH':
                     print("Matching complate!")
                     break
+
                 elif res == b'NEXTT':
                     break
+
                 else:
                     print(res.decode("utf-8"))
 
+            #マッチング完了後、データ受信準備完了のデータを送信
             sleep(0.5)
             s.send("READY".encode("utf-8"))
 
+            #カードデータを受信
             msg = s.recv(256)
-
             CardData = pickle.loads(msg)
 
             dealer_card_data = [CardData[0], CardData[1]]
             P1_card_data = [CardData[2], CardData[3]]
             P2_card_data = [CardData[4], CardData[5]]
 
+
+            #ディーラーのカードを一枚のみ見せる
             print("Dealer's Card")
             dbuf = bjgame.ShowCards(dealer_card_data)
             print(dbuf[0])
 
+            #自分に配られたカードを見せる
             print("Cards Dealt")
             if P1_flag == 1:
                 print(bjgame.ShowCards(P1_card_data))
@@ -102,43 +113,43 @@ def main():
                 print(bjgame.ShowCards(P2_card_data))
                 PCardData = P2_card_data
 
+            #カードを引くかどうかのループ、バーストするか追加で引かないと抜ける
             while 1:
-                    if(bjgame.CardSum_Class(PCardData) > 21):
-                        print("You are busted!")
-                        changeflg = "3"
-                        ChangeData = [changeflg, None]
-                        s.send(pickle.dumps(ChangeData))
-                        break
-                    
-                    print("Do you wanna add card? Yes = 1 No = 2")
-                    print(bjgame.ShowCards(PCardData))
-                    changeflg = input()
+                if(bjgame.CardSum_Class(PCardData) > 21):
+                    print("You are busted!")
+                    changeflg = "3"
+                    ChangeData = [changeflg, None]
+                    s.send(pickle.dumps(ChangeData))
+                    break
+                
+                print("Do you wanna add card? Yes = 1 No = 2")
+                print(bjgame.ShowCards(PCardData))
+                changeflg = input()
 
-                    if(changeflg == "1"):       #カード追加
+                if(changeflg == "1"):       #カード追加
 
-                        ChangeData = [changeflg, 0]
-                        s.send(pickle.dumps(ChangeData))
-                        msg = s.recv(256)
-                        PCardData = pickle.loads(msg)
+                    ChangeData = [changeflg, 0]
+                    s.send(pickle.dumps(ChangeData))
+                    msg = s.recv(256)
+                    PCardData = pickle.loads(msg)
 
-                    elif(changeflg == "2"):
-                        ChangeData = [changeflg, None]
-                        s.send(pickle.dumps(ChangeData))
-                        break
+                elif(changeflg == "2"):
+                    ChangeData = [changeflg, None]
+                    s.send(pickle.dumps(ChangeData))
+                    break
 
-                    else:
-                        print("invaid value")
-                    
+                else:
+                    print("invaid value")
+
+            #最終的なカードを見せる                   
             print("Your Cards")
             print(bjgame.ShowCards(PCardData))
 
-            waitcnt = 0
-
+            #他プレイヤーの処理を待つ、5byte
             while 1:
                 res = s.recv(5)
                 if res == b'WAITN':
                     print("Waiting for others...")
-                    waitcnt =+ 1
 
                 elif res == b'DONE!':
                     print("who wins...")
@@ -147,12 +158,11 @@ def main():
                     pass
                 res = None
             
+            #勝敗判定の表示のループ
             while 1:
                 res = s.recv(5)
-                if res == b'SHOWD':
-                    print("Dealer win!")
-                    print(dealer_card_data)
-                elif res == b'GOWIN':
+
+                if res == b'GOWIN':
                     all_card_data = s.recv(512)
                     all_card_data = pickle.loads(all_card_data)
 
@@ -174,7 +184,6 @@ def main():
                     if win == b'win!':
                         print("You Win!")
 
-
                     elif win == b'lose':
                         print("You lose! ")
                         
@@ -185,6 +194,7 @@ def main():
                 print(bjgame.ShowCards(others_card_data))     
                 break
 
+            #コンティニューのループ
             print("contunue?  yes or no")
             while 1:
                 cont = input()
