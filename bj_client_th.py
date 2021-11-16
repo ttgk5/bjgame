@@ -11,8 +11,11 @@ import pickle
 import sys
 import threading
 from time import sleep
+import bj_gui as bjg
 
 import bjgame
+root = bjg.tk.Tk()
+game = bjg.gui(master=root)
 
 player_flag = 0
 P1_flag = 0
@@ -69,16 +72,20 @@ def game_thread():
 
                 if res == b'START':
                     print("Welcome BLACKJACK game! please wait...")
+
+                    game.start_click()
                     
                 elif res == b'PLAY1':
                     print("You are player 1")
                     player_flag = 1
                     P1_flag = 1
+                    game.match_phase(player_flag)
 
                 elif res == b'PLAY2':
                     print("You are player 2")
                     player_flag = 2
                     P2_flag = 1
+                    game.match_phase(player_flag)
 
                 elif res == b'MATCH':
                     print("Matching complate!")
@@ -116,6 +123,8 @@ def game_thread():
             elif P2_flag == 1:
                 print(bjgame.ShowCards(P2_card_data))
                 PCardData = P2_card_data
+            
+            game.main_phase(dealer_card_data, P1_card_data, P2_card_data)
 
             #カードを引くかどうかのループ、バーストするか追加で引かないと抜ける
             while 1:
@@ -145,7 +154,7 @@ def game_thread():
                 else:
                     print("invaid value")
 
-            #最終的なカードを見せる                   
+            #最終的なカードを見せる
             print("Your Cards")
             print(bjgame.ShowCards(PCardData))
 
@@ -231,17 +240,19 @@ def game_thread():
             continue
 
 def main():
-	try:
-		main_th = threading.Thread(target=game_thread)
-		main_th.setDaemon(True)
-		main_th.start()
-		
-		while 1:
-			pass
+    try:
 
-	except Exception as e:
-		print(e)
+
+        main_th = threading.Thread(target=game_thread)
+        main_th.setDaemon(True)
+        main_th.start()
+
+
+        game.mainloop()
+
+
+    except Exception as e:
+        print(e)
 
 if __name__ == "__main__":
     main()
-    

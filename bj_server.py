@@ -59,7 +59,9 @@ def game_var_init():
     global dealer_card_data
     global game_end_flag
     global clients_card_data
+    global clients
 
+    clients = []
 
     card_sel_comp_flag = []
     game_end_flag = []
@@ -348,7 +350,8 @@ def player_main_thread(connection, address):
         print(e)
 
     finally:
-        clients.remove((connection, address))
+        if len(clients) != 0:
+            clients.remove((connection, address))
         print(clients)
 
         connection.close()
@@ -386,8 +389,13 @@ def game_manager():
 
 def comandline():
     while 1:
-        if input() == "exit":
+        print(">>", end=" ")
+        cmd = input()
+        if cmd == "exit":
             sys.exit()
+        elif cmd == "init":
+            game_var_init()
+            print("comandline : init game var")
         else:
             print("comandline : invaild commands")
 

@@ -429,6 +429,7 @@ def main():
     game = gui(master=root)
     game.start_click()
     game.match_phase(1)
+    """
     deck = bjgame.MakeDeck()
     dealer = bjgame.CardDealer(deck)
     P1 = bjgame.CardDealer(deck)
@@ -436,11 +437,14 @@ def main():
     game.main_phase(dealer, P1, P2)
     P1 = bjgame.CardDealer(deck, P1, 1)
     P2 = bjgame.CardDealer(deck, P2, 1)
+
+    """
+    
     game.main_phase(dealer, P1, P2)
     game.stop_click()
     game.judge_phase(b'win!')
     game.continue_phase()
-
+    
 
     game.mainloop()
 
