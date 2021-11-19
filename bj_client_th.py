@@ -51,6 +51,10 @@ def game_thread():
     global win
 
     #サーバーに接続要求
+
+    while game.start_flag != 1:
+        pass
+
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         host = "127.0.0.1"
@@ -79,13 +83,12 @@ def game_thread():
                     print("You are player 1")
                     player_flag = 1
                     P1_flag = 1
-                    game.match_phase(player_flag)
 
                 elif res == b'PLAY2':
                     print("You are player 2")
                     player_flag = 2
                     P2_flag = 1
-                    game.match_phase(player_flag)
+                    
 
                 elif res == b'MATCH':
                     print("Matching complate!")
@@ -100,6 +103,7 @@ def game_thread():
             #マッチング完了後、データ受信準備完了のデータを送信
             sleep(0.5)
             s.send("READY".encode("utf-8"))
+            game.match_phase(player_flag)
 
             #カードデータを受信
             msg = s.recv(256)
@@ -124,10 +128,15 @@ def game_thread():
                 print(bjgame.ShowCards(P2_card_data))
                 PCardData = P2_card_data
             
-            game.main_phase(dealer_card_data, P1_card_data, P2_card_data)
-
+            
+            if P1_flag == 1:
+                game.main_phase(dealer_card_data, PCardData, P2_card_data)
+            elif P2_flag == 1:
+                game.main_phase(dealer_card_data, P1_card_data, PCardData)
+                            
             #カードを引くかどうかのループ、バーストするか追加で引かないと抜ける
             while 1:
+
                 if(bjgame.CardSum_Class(PCardData) > 21):
                     print("You are busted!")
                     changeflg = "3"
@@ -137,22 +146,36 @@ def game_thread():
                 
                 print("Do you wanna add card? Yes = 1 No = 2")
                 print(bjgame.ShowCards(PCardData))
-                changeflg = input()
+                print(game.draw_flag)
 
-                if(changeflg == "1"):       #カード追加
+                buf = 0
 
-                    ChangeData = [changeflg, 0]
+                changeflg = game.draw_flag
+ 
+
+
+                if(int(game.draw_flag) == 1 and int(game.stop_flag) == 0):       #カード追加
+                    changeflg = game.draw_flag
+                    ChangeData = [str(changeflg), 0]
                     s.send(pickle.dumps(ChangeData))
-                    msg = s.recv(256)
+                    msg = s.recv(512)
                     PCardData = pickle.loads(msg)
+                    if P1_flag == 1:
+                        game.main_phase(dealer_card_data, PCardData, P2_card_data)
+                    elif P2_flag == 1:
+                        game.main_phase(dealer_card_data, P1_card_data, PCardData)
+                    game.draw_flag = 0               
 
-                elif(changeflg == "2"):
-                    ChangeData = [changeflg, None]
+                if(int(game.stop_flag) == 1):
+                    changeflg = "2"
+                    ChangeData = [str(changeflg), None]
                     s.send(pickle.dumps(ChangeData))
                     break
 
                 else:
                     print("invaid value")
+                    print(changeflg, type(changeflg))
+                    sleep(2)
 
             #最終的なカードを見せる
             print("Your Cards")
@@ -180,11 +203,14 @@ def game_thread():
                     all_card_data = pickle.loads(all_card_data)
 
                     dealer_card_data = all_card_data[2]
+                    game.d_card_list = dealer_card_data
 
                     if player_flag == 1:
                         others_card_data = all_card_data[1]
+                        game.p2_card_list = others_card_data
                     elif player_flag == 2:
                         others_card_data = all_card_data[0]
+                        game.p1_card_list = others_card_data
 
                     print("Dealer's cards")
                     
@@ -196,12 +222,15 @@ def game_thread():
                     win = s.recv(4)
                     if win == b'win!':
                         print("You Win!")
+                        game.judge_phase(win)
 
                     elif win == b'lose':
                         print("You lose! ")
+                        game.judge_phase(win)
                         
                     elif win == b'draw':
                         print("Draw!")
+                        game.judge_phase(win)
 
                 print("Other player's Cards")
                 print(bjgame.ShowCards(others_card_data))     
@@ -209,14 +238,15 @@ def game_thread():
 
             #コンティニューのループ
             print("contunue?  yes or no")
+            game.continue_phase()
             while 1:
-                cont = input()
-                if cont == "no":
+                cont = game.continue_exit_flag
+                if int(cont) == 2:
                     sleep(0.5)
                     s.send("ENDGAMES".encode("utf-8"))
                     print("see you nex time!")
                     sys.exit()
-                elif cont == "yes":
+                elif int(cont) == 1:
                     sleep(0.5)
                     s.send("CONTINUE".encode("utf-8"))
                     msg = 0

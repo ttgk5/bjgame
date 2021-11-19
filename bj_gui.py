@@ -96,12 +96,17 @@ class gui(tk.Frame):
     stop_flag = 0
     player_flag = 0
     btn_flag = 0
+    continue_exit_flag = 0
+
     d_card_list = []
     p1_card_list = []
     p2_card_list = []
     d_img_list = []
     p1_img_list = []
     p2_img_list = []
+    
+    p1_path = None
+    p2_path = None
 
 
 
@@ -124,6 +129,7 @@ class gui(tk.Frame):
         self.drawflag = 0
         self.player_flag = 0
         self.btn_flag = 0
+        self.continue_exit_flag = 0
         self.d_card_list = []
         self.p1_card_list = []
         self.p2_card_list = []
@@ -237,6 +243,7 @@ class gui(tk.Frame):
         self.continue_img = ImageTk.PhotoImage(self.continue_img)
         self.continue_btn = tk.Button(image=self.continue_img, compound="none", command=self.continue_click)
         self.continue_btn.place(x=220,y=310)
+        
         self.exit_img = Image.open(ex)
         self.exit_img = self.exit_img.resize((60, 40))
         self.exit_img = ImageTk.PhotoImage(self.exit_img)
@@ -253,6 +260,7 @@ class gui(tk.Frame):
         self.canvas = tk.Canvas(self, width=600, height=400)
         self.bg_img = tk.PhotoImage(file = bg)
         self.canvas.create_image(300, 200, image = self.bg_img)
+        self.continue_exit_flag = 1
         self.set_phase()
         self.canvas.pack()
         self.start_click()
@@ -261,6 +269,7 @@ class gui(tk.Frame):
 
 
     def exit_click(self):
+        self.continue_exit_flag = 2
         self.quit()
 
             
@@ -308,16 +317,13 @@ class gui(tk.Frame):
             self.d_img_list.append(img)
             self.canvas.create_image(245+(i*60), 90, image=self.d_img_list[i], anchor=tk.NW)
         
-
-
-
-
     #Player1のカードを表示
     #show_flagがNoneならカードをすべて裏
     #そうでないならすべて表示
     def p1_show(self, cards, show_flag = None):
         self.canvas.delete('l1')
         self.p1_img_list = []
+        p1_path = []
         if show_flag != None:
             p1_path = cardPath(cards)
             sum = bjgame.CardSum_Class(cards)
@@ -325,17 +331,21 @@ class gui(tk.Frame):
                 self.canvas.create_text(170, 360, text='busted!', font=("MSゴシック", "20"), tag='l1')
             else:
                 self.canvas.create_text(160, 360, text=str(sum), font=("MSゴシック", "20"), tag='l1')
+
         elif show_flag == None:
-            p1_img_path = backOnlyPath(len(cards))
+            p1_path = backOnlyPath(len(cards))
             self.canvas.create_text(160, 360, text="??", font=("MSゴシック", "20"), tag='l1')
-        for i in range(len(p1_path)):
-            img = Image.open(p1_path[i])
+
+        for i in range(len(cards)):
+            if show_flag != None:
+                img = Image.open(p1_path[i])
+            elif show_flag == None:
+                img = Image.open(p1_path[i])
+
             img = img.resize((50, 65))
             img = ImageTk.PhotoImage(img)
             self.p1_img_list.append(img)
             self.canvas.create_image(50+(i*60), 235, image=self.p1_img_list[i], anchor=tk.NW)
-
-
 
 
     #Player2のカードを表示
@@ -344,6 +354,7 @@ class gui(tk.Frame):
     def p2_show(self, cards, show_flag = None):
         self.canvas.delete('l2')
         self.p2_img_list = []
+        p2_path = []
         if show_flag != None:
             p2_path = cardPath(cards)
             sum = bjgame.CardSum_Class(cards)
@@ -354,7 +365,13 @@ class gui(tk.Frame):
         elif show_flag == None:
             p2_path = backOnlyPath(len(cards))
             self.canvas.create_text(460, 360, text="??", font=("MSゴシック", "20"), tag='l2')
-        for i in range(len(p2_path)):
+
+        for i in range(len(cards)):
+            if show_flag != None:
+                img = Image.open(p2_path[i])
+            elif show_flag == None:
+                img = Image.open(p2_path[i])
+
             img = Image.open(p2_path[i])
             img = img.resize((50, 65))
             img = ImageTk.PhotoImage(img)
@@ -429,20 +446,20 @@ def main():
     game = gui(master=root)
     game.start_click()
     game.match_phase(1)
-    """
+    
     deck = bjgame.MakeDeck()
     dealer = bjgame.CardDealer(deck)
     P1 = bjgame.CardDealer(deck)
     P2 = bjgame.CardDealer(deck)
-    game.main_phase(dealer, P1, P2)
-    P1 = bjgame.CardDealer(deck, P1, 1)
-    P2 = bjgame.CardDealer(deck, P2, 1)
+    #game.main_phase(dealer, P1, P2)
+    #P1 = bjgame.CardDealer(deck, P1, 1)
+    #P2 = bjgame.CardDealer(deck, P2, 1)
 
-    """
+    
     
     game.main_phase(dealer, P1, P2)
     game.stop_click()
-    game.judge_phase(b'win!')
+    #game.judge_phase(b'win!')
     game.continue_phase()
     
 
