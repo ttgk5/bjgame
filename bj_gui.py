@@ -69,9 +69,10 @@ img_cards = [
         "./img/C_13.png",
     ]
 ]
+
 bg = "./img/backgraund.png"
 logo = "./img/logo.png"
-start = "./img/button_start.png"
+start = "./img/START.png"
 waiting_match = "./img/waiting_match.png"
 match = "./img/maching.png"
 p1 = "./img/Player1.png"
@@ -80,12 +81,13 @@ sb = "./img/scoreborad.png"
 win = "./img/win.png"
 lose = "./img/lose.png"
 draw = "./img/draw.png"
-btn_d = "./img/button_draw.png"
-btn_s = "./img/button_stop.png"
+btn_d = "./img/DRAW_button.png"
+btn_s = "./img/STOP.png"
 waiting = "./img/waiting.png"
-conti =  "./img/continue.png"
-ex = "./img/exit.png"
+conti =  "./img/CONTINUE.png"
+ex = "./img/EXIT.png"
 bc = "./img/card.png"
+
 
 
 
@@ -115,6 +117,7 @@ class gui(tk.Frame):
         self.pack()
         master.geometry("600x400")
         master.title("Black Jack")
+        master.resizable(False, False)
         self.canvas = tk.Canvas(master, width=600, height=400)
         self.bg_img = tk.PhotoImage(file = bg)
         self.canvas.create_image(300, 200, image = self.bg_img)
@@ -143,10 +146,10 @@ class gui(tk.Frame):
         self.logo_img = tk.PhotoImage(file = logo)
         self.canvas.create_image(300, 200, image = self.logo_img, tag = 't1')
         self.startbtn_img = Image.open(start)
-        self.startbtn_img = self.startbtn_img.resize((60, 40))
+        self.startbtn_img = self.startbtn_img.resize((70, 70))
         self.startbtn_img = ImageTk.PhotoImage(self.startbtn_img)
-        self.start_btn = tk.Button(image=self.startbtn_img, compound="none", command=self.start_click)
-        self.start_btn.place(x=270,y=300)
+        self.start_btn = ttk.Button(image=self.startbtn_img, compound="none", command=self.start_click)
+        self.start_btn.place(x=270,y=270)
 
 
 
@@ -193,15 +196,15 @@ class gui(tk.Frame):
 
     def make_mainbutton(self):
         self.draw_btn_img = Image.open(btn_d)
-        self.draw_btn_img = self.draw_btn_img.resize((60, 40))
+        self.draw_btn_img = self.draw_btn_img.resize((55, 55))
         self.draw_btn_img = ImageTk.PhotoImage(self.draw_btn_img)
-        self.draw_btn = tk.Button(image=self.draw_btn_img, compound="none", command=self.draw_click)
-        self.draw_btn.place(x=220,y=180)
+        self.draw_btn = ttk.Button(image=self.draw_btn_img, compound="none", command=self.draw_click)
+        self.draw_btn.place(x=200,y=167)
         self.stop_btn_img = Image.open(btn_s)
-        self.stop_btn_img = self.stop_btn_img.resize((60, 40))
+        self.stop_btn_img = self.stop_btn_img.resize((55, 55))
         self.stop_btn_img = ImageTk.PhotoImage(self.stop_btn_img)
-        self.stop_btn = tk.Button(image=self.stop_btn_img, compound="none", command=self.stop_click)
-        self.stop_btn.place(x=320,y=180)
+        self.stop_btn = ttk.Button(image=self.stop_btn_img, compound="none", command=self.stop_click)
+        self.stop_btn.place(x=340,y=167)
         self.btn_flag = 1
         
 
@@ -239,13 +242,13 @@ class gui(tk.Frame):
 
     def continue_phase(self):
         self.continue_img = Image.open(conti)
-        self.continue_img = self.continue_img.resize((60, 40))
+        self.continue_img = self.continue_img.resize((50, 50))
         self.continue_img = ImageTk.PhotoImage(self.continue_img)
         self.continue_btn = tk.Button(image=self.continue_img, compound="none", command=self.continue_click)
         self.continue_btn.place(x=220,y=310)
         
         self.exit_img = Image.open(ex)
-        self.exit_img = self.exit_img.resize((60, 40))
+        self.exit_img = self.exit_img.resize((50, 50))
         self.exit_img = ImageTk.PhotoImage(self.exit_img)
         self.exit_btn = tk.Button(image=self.exit_img, compound="none", command=self.exit_click)
         self.exit_btn.place(x=320,y=310)
@@ -253,6 +256,8 @@ class gui(tk.Frame):
 
 
     def continue_click(self):
+
+        self.continue_exit_flag = 1
         self.continue_btn.destroy()
         self.exit_btn.destroy()
         self.canvas.destroy()
@@ -260,7 +265,7 @@ class gui(tk.Frame):
         self.canvas = tk.Canvas(self, width=600, height=400)
         self.bg_img = tk.PhotoImage(file = bg)
         self.canvas.create_image(300, 200, image = self.bg_img)
-        self.continue_exit_flag = 1
+        
         self.set_phase()
         self.canvas.pack()
         self.start_click()
@@ -270,6 +275,7 @@ class gui(tk.Frame):
 
     def exit_click(self):
         self.continue_exit_flag = 2
+        #self.destroy()
         self.quit()
 
             

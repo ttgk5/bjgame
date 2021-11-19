@@ -121,18 +121,17 @@ def game_thread():
 
             #自分に配られたカードを見せる
             print("Cards Dealt")
-            if P1_flag == 1:
+            if player_flag == 1:
                 print(bjgame.ShowCards(P1_card_data))
                 PCardData = P1_card_data
-            elif P2_flag == 1:
+                game.main_phase(dealer_card_data, PCardData, P2_card_data)
+            elif player_flag == 2:
                 print(bjgame.ShowCards(P2_card_data))
                 PCardData = P2_card_data
-            
-            
-            if P1_flag == 1:
-                game.main_phase(dealer_card_data, PCardData, P2_card_data)
-            elif P2_flag == 1:
                 game.main_phase(dealer_card_data, P1_card_data, PCardData)
+            
+
+                
                             
             #カードを引くかどうかのループ、バーストするか追加で引かないと抜ける
             while 1:
@@ -239,8 +238,13 @@ def game_thread():
             #コンティニューのループ
             print("contunue?  yes or no")
             game.continue_phase()
+
+            cont = game.continue_exit_flag
+
             while 1:
                 cont = game.continue_exit_flag
+                #print(cont, "contf")
+
                 if int(cont) == 2:
                     sleep(0.5)
                     s.send("ENDGAMES".encode("utf-8"))
@@ -251,7 +255,8 @@ def game_thread():
                     s.send("CONTINUE".encode("utf-8"))
                     msg = 0
                     break
-            
+            cont = 0
+
             print("other player waitin...")
             res = s.recv(8)
             while 1:
@@ -260,9 +265,11 @@ def game_thread():
                     break
                 elif res == b'ENDGAMES':
                     print("see you next time!")
+                    game.quit()
                     sys.exit()
                 else:
                     print(res.decode("utf-8"))
+            
                 
 
         except Exception as e:
@@ -279,6 +286,8 @@ def main():
 
 
         game.mainloop()
+
+        main_th.join()
 
 
     except Exception as e:

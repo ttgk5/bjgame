@@ -30,6 +30,8 @@ clients = []
 
 card_sel_comp_flag = []
 player_continue_flag = []
+P1_flag = 0
+P2_flag = 0
 P1_burst_flag = 0
 P2_burst_flag = 0
 P1_continue_flag = None
@@ -37,6 +39,8 @@ P2_continue_flag = None
 game_var_init_flag = []
 game_end_flag = []
 game_continue_flag = []
+game_judge_flag = []
+game_result = []
 game_play_counter = 0
 deck = bjgame.MakeDeck()
 
@@ -48,6 +52,8 @@ clients_card_data = [dealer_card_data]
 
 def game_var_init():
     global card_sel_comp_flag
+    global P1_flag
+    global P2_flag
     global P1_burst_flag
     global P2_burst_flag
     global P1_continue_flag
@@ -60,13 +66,19 @@ def game_var_init():
     global game_end_flag
     global clients_card_data
     global clients
+    global game_judge_flag
+    global game_result
 
-    clients = []
+    #clients = []
 
     card_sel_comp_flag = []
     game_end_flag = []
+    game_judge_flag = []
+    game_result = []
     P1_burst_flag = 0
     P2_burst_flag = 0
+    P1_flag = 0
+    P2_flag = 0
 
     #P1_continue_flag = 0
     #P2_continue_flag = 0
@@ -83,6 +95,8 @@ def winner_judge(connection,pflag):
     global dealer_card_data
     global P1_card_data
     global P2_card_data
+    global game_judge_flag
+    global game_result
 
     while 1:
         if(len(card_sel_comp_flag) == MAX_PLAYER):
@@ -105,39 +119,46 @@ def winner_judge(connection,pflag):
     all_card_data = [P1_card_data, P2_card_data, d]
     sleep(0.1)
 
-    connection.send(pickle.dumps(all_card_data))
+    
     sleep(0.1)
     player_card = [P1_card_data, P2_card_data]
-    result = bjgame.WinJudge(player_card, d)
+
+    game_judge_flag.append(1)
+    while(len(game_judge_flag)) != MAX_PLAYER:
+        pass
+
+    connection.send(pickle.dumps(all_card_data))
+    
 
     while 1:
         rdyflg = connection.recv(5)
         if rdyflg == b"READY":
+            print("game_result", game_result)
             break
     if(pflag == 1):
-        if result[pflag-1] == 0:
+        if game_result[pflag-1] == 0:
             sleep(0.3)
             connection.send("lose".encode("utf-8"))
             print("P%d lose" %(pflag))
-        if result[pflag] == 1:
+        if game_result[pflag-1] == 1:
             sleep(0.3)
             connection.send("draw".encode("utf-8"))
             print("P%d draw" %(pflag))
-        if result[pflag] == 2:
+        if game_result[pflag-1] == 2:
             sleep(0.3)
             connection.send("win!".encode("utf-8"))
             print("P%d win" %(pflag))
 
     elif(pflag == 2):
-        if result[pflag-1] == 0:
+        if game_result[pflag-1] == 0:
             sleep(0.3)
             connection.send("lose".encode("utf-8"))
             print("P%d lose" %(pflag))
-        if result[pflag-1] == 1:
+        if game_result[pflag-1] == 1:
             sleep(0.3)
             connection.send("draw".encode("utf-8"))
             print("P%d draw" %(pflag))
-        if result[pflag-1] == 2:
+        if game_result[pflag-1] == 2:
             sleep(0.3)
             connection.send("win!".encode("utf-8"))
             print("P%d win" %(pflag))
@@ -156,6 +177,8 @@ def player_allocation(connection, address):
 def player_main_thread(connection, address):
     global deck
     global card_sel_comp_flag
+    global P1_flag
+    global P2_flag
     global P1_continue_flag
     global P2_continue_flag
     global game_var_init_flag
@@ -184,22 +207,32 @@ def player_main_thread(connection, address):
                 if pflag == 1:
                     connection.send("PLAY1".encode("utf-8"))
                     P1_continue_flag = None
+                    P1_flag = 1
                 if pflag == 2:
-                    P2_continue_flag = None
                     connection.send("PLAY2".encode("utf-8"))
+                    P2_continue_flag = None
+                    P2_flag = 1
             else:
                 while 1:
-                    if len(game_continue_flag) == MAX_PLAYER:
+                    if len(game_continue_flag) != 0:
+                        print("Continue flag",game_continue_flag)
                         break
+                    
+                print("player_main_thread %d : match!" % (pflag))
+                sleep(1)
+                
                 if pflag == 1:
                     connection.send("PLAY1".encode("utf-8"))
+                    P1_flag = 1
                     sleep(0.5)
                 if pflag == 2:
                     connection.send("PLAY2".encode("utf-8"))
+                    P2_flag = 1
                     sleep(0.5)
 
+
             while 1:               
-                if len(clients) == MAX_PLAYER:
+                if P1_flag == 1 and P2_flag == 1:
                     connection.send("MATCH".encode("utf-8"))
                     sleep(0.5)
                     """
@@ -237,7 +270,7 @@ def player_main_thread(connection, address):
                         sleep(0.2)
                         connection.send(pickle.dumps(P1_card_data))
                     else:
-                        P1_card_data = bjgame.CardDealer(deck, P2_card_data, 1)
+                        P2_card_data = bjgame.CardDealer(deck, P2_card_data, 1)
                         sleep(0.2)
                         connection.send(pickle.dumps(P2_card_data))                    
 
@@ -268,7 +301,7 @@ def player_main_thread(connection, address):
 
             winner_judge(connection,pflag)
 
-            
+            game_play_counter += 1
             cont = connection.recv(8)
             while 1:
                 if cont == b"CONTINUE":
@@ -360,11 +393,14 @@ def player_main_thread(connection, address):
 def game_manager():
     global player_continue_flag
     global clients
+    global dealer_card_data
+    global game_result
     global game_play_counter
     global P1_continue_flag
     global P2_continue_flag
     global game_var_init_flag
     global game_continue_flag
+    global game_judge_flag
 
 
     print("game_manager: Thread created")
@@ -374,12 +410,16 @@ def game_manager():
                 print("game_manager: initialized")
                 sleep(0.5)
                 game_var_init()
-                game_play_counter += 1
+                #game_play_counter += 1
             if len(game_end_flag) == MAX_PLAYER:
                 sleep(2)
                 print("game_manager: initialized (because no players)")
                 game_var_init()
-                game_play_counter += 1
+                #game_play_counter += 1
+            
+            if len(game_judge_flag) == MAX_PLAYER:
+                player_card = [P1_card_data, P2_card_data]
+                game_result = bjgame.WinJudge(player_card, dealer_card_data)
 
             if len(clients) == 0:
                 game_continue_flag = [1,1]

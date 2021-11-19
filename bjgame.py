@@ -120,12 +120,14 @@ def dealerCPU(deck, cards, P1, P2):
     while 1:
         if CardSum_Class(cards) < 17:
             cards = CardDealer(deck, cards, 1)
+            
+
         elif CardSum_Class(cards) >= 22:
             return cards
         else:
             break
-    if (CardSum_Class(cards) < CardSum_Class(P1) or CardSum_Class(cards) < CardSum_Class(P2)):
-        cards = CardDealer(deck, cards, 1)
+    #if (CardSum_Class(cards) < CardSum_Class(P1) or CardSum_Class(cards) < CardSum_Class(P2)):
+        #cards = CardDealer(deck, cards, 1)
 
     return cards
 

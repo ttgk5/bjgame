@@ -106,10 +106,10 @@ def main():
 
             #自分に配られたカードを見せる
             print("Cards Dealt")
-            if P1_flag == 1:
+            if player_flag == 1:
                 print(bjgame.ShowCards(P1_card_data))
                 PCardData = P1_card_data
-            elif P2_flag == 1:
+            elif player_flag == 2:
                 print(bjgame.ShowCards(P2_card_data))
                 PCardData = P2_card_data
 
@@ -163,7 +163,7 @@ def main():
                 res = s.recv(5)
 
                 if res == b'GOWIN':
-                    all_card_data = s.recv(512)
+                    all_card_data = s.recv(1024)
                     all_card_data = pickle.loads(all_card_data)
 
                     dealer_card_data = all_card_data[2]
