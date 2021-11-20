@@ -2,7 +2,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 from PIL import Image, ImageTk
 import sys
-from time import sleep
+from time import sleep, time
 
 import bjgame
 
@@ -173,8 +173,10 @@ class gui(tk.Frame):
         self.canvas.create_image(300, 200, image = self.match_img, tag = 't3')
         if self.player_flag == 1:
             self.canvas.create_image(300, 200, image = self.p1_img, tag = 't4')
+            sleep(1)
         elif self.player_flag == 2:
             self.canvas.create_image(300, 200, image = self.p2_img, tag = 't5')
+            sleep(1)
 
 
 
@@ -221,10 +223,12 @@ class gui(tk.Frame):
         self.waiting_img = tk.PhotoImage(file = waiting)
         self.canvas.create_image(300, 200, image = self.waiting_img, tag = 't7')
         self.canvas.pack()
+    
         
 
 
     def judge_phase(self, judge):
+        sleep(0.5)
         self.canvas.delete('t7')
         self.show_all()
         if judge == b'win!':
@@ -314,6 +318,7 @@ class gui(tk.Frame):
             sum = bjgame.CardSum_Class(cards)
             if sum > 21 :
                 self.canvas.create_text(310, 58, text='busted!', font=("MSゴシック", "20"), tag='l0')
+                self.stop_click()
             else:
                 self.canvas.create_text(300, 58, text=str(sum), font=("MSゴシック", "20"), tag='l0')
         for i in range(len(d_path)):
@@ -335,6 +340,7 @@ class gui(tk.Frame):
             sum = bjgame.CardSum_Class(cards)
             if sum > 21 :
                 self.canvas.create_text(170, 360, text='busted!', font=("MSゴシック", "20"), tag='l1')
+                self.stop_click()
             else:
                 self.canvas.create_text(160, 360, text=str(sum), font=("MSゴシック", "20"), tag='l1')
 
@@ -366,6 +372,7 @@ class gui(tk.Frame):
             sum = bjgame.CardSum_Class(cards)
             if sum > 21 :
                 self.canvas.create_text(470, 360, text='busted!', font=("MSゴシック", "20"), tag='l2')
+                self.stop_click()
             else:
                 self.canvas.create_text(460, 360, text=str(sum), font=("MSゴシック", "20"), tag='l2')
         elif show_flag == None:

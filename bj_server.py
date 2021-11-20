@@ -220,7 +220,7 @@ def player_main_thread(connection, address):
                     
                 print("player_main_thread %d : match!" % (pflag))
                 sleep(1)
-                
+
                 if pflag == 1:
                     connection.send("PLAY1".encode("utf-8"))
                     P1_flag = 1
@@ -443,9 +443,6 @@ def comandline():
 def player_acceptance():
     global clients
 
-    #cmd = threading.Thread(target=comandline, daemon=True)
-
-    #cmd.start()
     try:
         while True:
             try:
