@@ -20,3 +20,7 @@ bj_client.py
 
 bjgame.py
 ゲーム周りの関数
+
+---
+
+2022 1/5 eod
